@@ -1,0 +1,65 @@
+generate_image修正点
+
+I've applied all 15 improvements to generate_images.py. The 44 tests I added all pass, but they run against a fake ComfyUI server I wrote (tests/fake_comfyui.py). I haven't run it against a real ComfyUI, so please try one or two scenes first.
+
+What changed, by item:
+
+┌─────┬────────────────────────────────┬─────────────────────────────────────────────────────────────────────────┐
+│  #  │             Before             │                                   Now                                   │
+├─────┼────────────────────────────────┼─────────────────────────────────────────────────────────────────────────┤
+│ 1   │ A late result could be saved   │ Only the current job's prompt_id is accepted; other jobs' notifications │
+│     │ under the next scene's name    │  are ignored                                                            │
+├─────┼────────────────────────────────┼─────────────────────────────────────────────────────────────────────────┤
+│ 2   │ Cached re-runs timed out       │ /history is checked every 5 seconds, so completion is detected even     │
+│     │                                │ without a WebSocket notice                                              │
+├─────┼────────────────────────────────┼─────────────────────────────────────────────────────────────────────────┤
+│ 3   │ Errors waited 300 seconds      │ ComfyUI errors fail the scene immediately with the reason shown; a      │
+│     │                                │ timed-out job is removed from ComfyUI's queue and stopped if running    │
+├─────┼────────────────────────────────┼─────────────────────────────────────────────────────────────────────────┤
+│ 4   │ Only the first image was saved │ SaveImage output is preferred; multiple images are saved as             │
+│     │                                │ name_01.jpg, name_02.jpg, …                                             │
+├─────┼────────────────────────────────┼─────────────────────────────────────────────────────────────────────────┤
+│ 5   │ Excel CSVs failed              │ BOM is supported; bad rows are skipped with a warning                   │
+├─────┼────────────────────────────────┼─────────────────────────────────────────────────────────────────────────┤
+│ 6   │ Kept going after a failed      │ Stops with an error; reconnects if dropped mid-run                      │
+│     │ connection                     │                                                                         │
+├─────┼────────────────────────────────┼─────────────────────────────────────────────────────────────────────────┤
+│ 7   │ PNG workflow info was lost     │ Same-format images are saved as received; JPEG conversion fills         │
+│     │                                │ transparency with white                                                 │
+├─────┼────────────────────────────────┼─────────────────────────────────────────────────────────────────────────┤
+│ 8   │ Depended on the current folder │ Paths are relative to the script's folder; output is created            │
+│     │                                │ automatically                                                           │
+├─────┼────────────────────────────────┼─────────────────────────────────────────────────────────────────────────┤
+│ 9,  │ URL not encoded, fixed client  │ URL encoding added; client ID is unique per run                         │
+│ 10  │ ID                             │                                                                         │
+├─────┼────────────────────────────────┼─────────────────────────────────────────────────────────────────────────┤
+│ 11  │ ernie's prompt was rewritten   │ Follows the connections to the right text node (see below)              │
+│     │ in the wrong place             │                                                                         │
+├─────┼────────────────────────────────┼─────────────────────────────────────────────────────────────────────────┤
+│ 12  │ Settings meant editing code    │ Command-line options added (-w, -o, -s, -t, and more)                   │
+├─────┼────────────────────────────────┼─────────────────────────────────────────────────────────────────────────┤
+│ 13  │ No resume, no duplicate        │ --skip-existing added; duplicate file_name values trigger a warning     │
+│     │ warning                        │                                                                         │
+├─────┼────────────────────────────────┼─────────────────────────────────────────────────────────────────────────┤
+│ 14  │ Encoding error, no record of   │ Output is UTF-8; failed scenes go to failed_scenes_*.csv, which you can │
+│     │ failures                       │  pass back in to retry                                                  │
+├─────┼────────────────────────────────┼─────────────────────────────────────────────────────────────────────────┤
+│ 15  │ Global variables, 1-second     │ Rewritten as a class; waits are event-driven                            │
+│     │ polling                        │                                                                         │
+└─────┴────────────────────────────────┴─────────────────────────────────────────────────────────────────────────┘
+
+About item 11: in ernie_image_turbo.json, the old code overwrote the prompt node's input with plain text. That bypassed the prompt-enhancement path. The new code writes the CSV prompt into the upstream text node 88:94 instead, so that path stays intact.
+
+Behaviour changes to know about:
+- The CSV argument is now required. The old fallback to E:\work\hermes\hopeRoad\scenes.csv is gone.
+- The default workflow is now Qwen-Image-2512_16_9.json. The workflow files were renamed during the work, so I pointed the default at the new name. 16_9 is the same size and date as the old YouTuibe file; if that's the wrong file, pass the right one with -w.
+- Exit codes:
+  - 0: everything succeeded
+  - 1: some scenes failed
+  - 2: setup error, such as an unreadable CSV or workflow, or ComfyUI unreachable
+
+Other files:
+- tests/fake_comfyui.py: a fake ComfyUI server (HTTP and WebSocket) for testing without a real ComfyUI.
+- tests/test_generate_images.py: the test suite. Run it with python -m pytest tests -v.
+- readme.md: rewritten for the new options and behaviour.
+

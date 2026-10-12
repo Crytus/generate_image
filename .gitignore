@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# 仮想環境
+.venv/
+venv/
+
+# テスト・キャッシュ
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 生成画像の出力先
+output/
+
+# エディタ・OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "generate-image"
+version = "0.1.0"
+description = "CSVに記述したシーン情報をもとに、ComfyUI の API で画像を一括生成するツール"
+readme = "readme.md"
+requires-python = ">=3.8"
+dependencies = [
+    "Pillow",
+    "websocket-client",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.scripts]
+# generate-images コマンドで generate_images.main() を実行する
+generate-images = "generate_images:main"
+
+[tool.setuptools]
+# 単一モジュール構成（パッケージの自動検出は行わない）
+py-modules = ["generate_images"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
