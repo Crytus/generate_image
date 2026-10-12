@@ -723,6 +723,7 @@ def generate_scene(client, workflow_template, scene, options):
 
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(
+        prog="generate_image",  # どこから実行しても usage に同じコマンド名を表示する
         description="CSVのシーン情報をもとに ComfyUI で画像を一括生成します。")
     parser.add_argument("csv", help="シーン情報のCSVファイル")
     parser.add_argument("-w", "--workflow",

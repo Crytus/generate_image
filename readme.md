@@ -13,8 +13,21 @@ CSVファイルに記述したシーン情報（プロンプト・シード・�
 
 ## インストール
 
-プロジェクトのルートで以下を実行すると、依存パッケージと `generate-images` コマンドがインストールされます。
+### どこからでも `generate_image` コマンドで使う（推奨）
+
+[uv](https://docs.astral.sh/uv/) を使い、プロジェクトのルートで以下を実行します。
+専用の仮想環境に依存パッケージが入り、`generate_image` コマンドが `%USERPROFILE%\.local\bin` に配置されます。
 編集可能モード（`-e`）なので、`generate_images.py` を修正すると即座に反映されます。
+
+```
+uv tool install -e .
+uv tool update-shell        # 初回のみ。.local\bin を PATH に追加（ターミナルの再起動が必要）
+```
+
+`pyproject.toml` の依存パッケージやコマンド定義を変更した場合は、`uv tool install -e . --reinstall` で再インストールしてください。
+アンインストールは `uv tool uninstall generate-image` です。
+
+### 開発用（プロジェクトの仮想環境にインストール）
 
 ```
 pip install -e .            # 本体のみ
@@ -32,7 +45,7 @@ pip install pillow websocket-client pytest
 | ファイル | 説明 |
 | --- | --- |
 | `generate_images.py` | 画像一括生成スクリプト本体 |
-| `pyproject.toml` | パッケージ設定（`pip install -e .` 用） |
+| `pyproject.toml` | パッケージ設定（`uv tool install -e .` / `pip install -e .` 用） |
 | `*.json` | ComfyUI のワークフロー（API形式でエクスポートしたもの） |
 | `hayfever_scenes.csv` | シーン情報CSVのサンプル |
 | `output/` | 生成画像の保存先（なければ自動作成） |
@@ -44,10 +57,10 @@ pip install pillow websocket-client pytest
 python generate_images.py <CSVファイルのパス> [オプション]
 ```
 
-インストール済みの場合は、どのフォルダからでも `generate-images` コマンドで実行できます（オプションは同じです）。
+インストール済みの場合は、どのフォルダからでも `generate_image` コマンドで実行できます（オプションは同じです）。
 
 ```
-generate-images <CSVファイルのパス> [オプション]
+generate_image <CSVファイルのパス> [オプション]
 ```
 
 例:

@@ -17,8 +17,8 @@ dependencies = [
 test = ["pytest"]
 
 [project.scripts]
-# generate-images コマンドで generate_images.main() を実行する
-generate-images = "generate_images:main"
+# generate_image コマンドで generate_images.main() を実行する
+generate_image = "generate_images:main"
 
 [tool.setuptools]
 # 単一モジュール構成（パッケージの自動検出は行わない）
