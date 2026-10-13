@@ -109,8 +109,8 @@ class TestSaveImage:
 
 class TestLoadCsv:
     def test_実CSVを読み込める(self):
-        scenes = g.load_scenes_from_csv(os.path.join(ROOT, "hayfever_scenes.csv"))
-        assert len(scenes) == 28
+        scenes = g.load_scenes_from_csv(os.path.join(ROOT, "test_scenes.csv"))
+        assert len(scenes) == 3
         assert scenes[0]["file_name"] == "scene_01_opener.jpg"
         assert isinstance(scenes[0]["seed"], int)
 
@@ -279,6 +279,12 @@ class TestResponses:
         assert args.timeout == 300 and not args.skip_existing
         with pytest.raises(SystemExit):
             g.parse_args(["a.csv", "--timeout", "0"])
+
+    def test_出力先の既定値は実行したフォルダのoutput(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        assert g.parse_args(["a.csv"]).output == str(tmp_path / "output")
+        # 相対パス指定も実行したフォルダ基準になる
+        assert g.parse_args(["a.csv", "-o", "img"]).output == str(tmp_path / "img")
 
 
 # ============================================================

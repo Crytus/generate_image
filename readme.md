@@ -47,8 +47,8 @@ pip install pillow websocket-client pytest
 | `generate_images.py` | 画像一括生成スクリプト本体 |
 | `pyproject.toml` | パッケージ設定（`uv tool install -e .` / `pip install -e .` 用） |
 | `*.json` | ComfyUI のワークフロー（API形式でエクスポートしたもの） |
-| `hayfever_scenes.csv` | シーン情報CSVのサンプル |
-| `output/` | 生成画像の保存先（なければ自動作成） |
+| `test_scenes.csv` | シーン情報CSVのサンプル |
+| `output/` | 生成画像の保存先（実行したフォルダに作成。なければ自動作成） |
 | `tests/` | テスト一式（偽の ComfyUI サーバーを含む） |
 
 ## 使い方
@@ -66,10 +66,10 @@ generate_image <CSVファイルのパス> [オプション]
 例:
 
 ```
-python generate_images.py hayfever_scenes.csv -w Qwen-Image-2512_16_9.json
-python generate_images.py hayfever_scenes.csv -w ernie_image_turbo.json --skip-existing
-python generate_images.py hayfever_scenes.csv -w qwen_image_2_1_t2i.json
-python generate_images.py hayfever_scenes.csv
+python generate_images.py test_scenes.csv -w Qwen-Image-2512_16_9.json
+python generate_images.py test_scenes.csv -w ernie_image_turbo.json --skip-existing
+python generate_images.py test_scenes.csv -w qwen_image_2_1_t2i.json
+python generate_images.py test_scenes.csv
 ```
 
 ### ワークフローの選択
@@ -94,7 +94,7 @@ python generate_images.py hayfever_scenes.csv
 | オプション | 説明 | 既定値 |
 | --- | --- | --- |
 | `-w`, `--workflow` | ワークフローJSON（API形式） | なし（カレントフォルダの JSON から番号で選択） |
-| `-o`, `--output` | 画像の保存先フォルダ | スクリプトと同じ場所の `output` |
+| `-o`, `--output` | 画像の保存先フォルダ | 実行したフォルダの `output` |
 | `-s`, `--server` | ComfyUI のアドレス | `localhost:8188` |
 | `-t`, `--timeout` | 1シーンあたりのタイムアウト（秒） | `300` |
 | `--skip-existing` | 出力ファイルが既にあるシーンをスキップ | 無効（上書き） |

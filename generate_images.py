@@ -23,9 +23,8 @@ from PIL import Image
 import websocket
 
 # === 既定値 ===
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_SERVER = "localhost:8188"
-DEFAULT_OUTPUT_DIR = os.path.join(SCRIPT_DIR, "output")
+DEFAULT_OUTPUT_DIR = "output"     # 実行したフォルダ（カレントフォルダ）からの相対パス
 DEFAULT_TIMEOUT = 300           # 1シーンあたりのタイムアウト（秒）
 HISTORY_POLL_INTERVAL = 5       # WebSocketの通知が来ない場合に履歴を確認する間隔（秒）
 WS_CONNECT_TIMEOUT = 10         # WebSocket接続のタイムアウト（秒）
@@ -729,7 +728,7 @@ def parse_args(argv=None):
     parser.add_argument("-w", "--workflow",
                         help="ワークフローJSON（API形式）。未指定時はカレントフォルダの JSON から番号で選択")
     parser.add_argument("-o", "--output", default=DEFAULT_OUTPUT_DIR,
-                        help="画像の保存先フォルダ (既定: スクリプトと同じ場所の output)")
+                        help="画像の保存先フォルダ (既定: 実行したフォルダの output)")
     parser.add_argument("-s", "--server", default=DEFAULT_SERVER,
                         help=f"ComfyUI のアドレス (既定: {DEFAULT_SERVER})")
     parser.add_argument("-t", "--timeout", type=int, default=DEFAULT_TIMEOUT,
@@ -745,6 +744,8 @@ def parse_args(argv=None):
     args = parser.parse_args(argv)
     if args.timeout <= 0:
         parser.error("--timeout は1以上を指定してください")
+    # 相対パスは実行したフォルダ基準で絶対パスにしておく（ログ表示を分かりやすくするため）
+    args.output = os.path.abspath(args.output)
     return args
 
 
