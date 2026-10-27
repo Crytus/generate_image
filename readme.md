@@ -13,7 +13,45 @@ CSVファイルに記述したシーン情報（プロンプト・シード・�
 
 ## インストール
 
-### どこからでも `generate_image` コマンドで使う（推奨）
+### GitHub から直接インストールする
+
+ソースを手元に置く必要がない場合は、[uv](https://docs.astral.sh/uv/) で GitHub から直接インストールできます。
+専用の仮想環境に依存パッケージが入り、`generate_image` コマンドが `%USERPROFILE%\.local\bin` に配置されます。
+
+```
+uv tool install git+https://github.com/Crytus/generate_image.git
+uv tool update-shell        # 初回のみ。.local\bin を PATH に追加（ターミナルの再起動が必要）
+```
+
+最新版に更新する場合は `uv tool install --reinstall git+https://github.com/Crytus/generate_image.git`、
+アンインストールは `uv tool uninstall generate-image` です。
+
+pip を使う場合は、以下でも同様にインストールできます（現在の Python 環境にインストールされます）。
+
+```
+pip install git+https://github.com/Crytus/generate_image.git
+```
+
+インストールせずに一度だけ試す場合は `uvx` が使えます。
+
+```
+uvx --from git+https://github.com/Crytus/generate_image.git generate_image <CSVファイルのパス> [オプション]
+```
+
+> **注意:** この方法でインストールされるのはスクリプト本体のみです。サンプルのワークフローJSON（`*.json`）や `test_scenes.csv` は含まれないため、必要な場合はリポジトリからダウンロードするか、下記の方法でクローンしてください。
+
+### ソースをクローンしてインストールする
+
+ソースを修正しながら使う場合や、サンプルのワークフローも使いたい場合は、リポジトリをクローンします。
+
+```
+git clone https://github.com/Crytus/generate_image.git
+cd generate_image
+```
+
+以降は、クローンしたフォルダ（プロジェクトのルート）で以下のいずれかの方法でインストールします。
+
+#### どこからでも `generate_image` コマンドで使う（推奨）
 
 [uv](https://docs.astral.sh/uv/) を使い、プロジェクトのルートで以下を実行します。
 専用の仮想環境に依存パッケージが入り、`generate_image` コマンドが `%USERPROFILE%\.local\bin` に配置されます。
@@ -27,7 +65,7 @@ uv tool update-shell        # 初回のみ。.local\bin を PATH に追加（タ
 `pyproject.toml` の依存パッケージやコマンド定義を変更した場合は、`uv tool install -e . --reinstall` で再インストールしてください。
 アンインストールは `uv tool uninstall generate-image` です。
 
-### 開発用（プロジェクトの仮想環境にインストール）
+#### 開発用（プロジェクトの仮想環境にインストール）
 
 ```
 pip install -e .            # 本体のみ

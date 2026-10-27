@@ -1,0 +1,3 @@
+# 実行に必要なパッケージ（pyproject.toml の dependencies と同じ内容）
+Pillow
+websocket-client
