@@ -314,6 +314,17 @@ class TestResponses:
         # 相対パス指定も実行したフォルダ基準になる
         assert g.parse_args(["a.csv", "-o", "img"]).output == str(tmp_path / "img")
 
+    @pytest.mark.parametrize("opt", ["-V", "--version"])
+    def test_バージョン表示はCSVなしで使える(self, opt, capsys):
+        with pytest.raises(SystemExit) as e:
+            g.parse_args([opt])
+        assert e.value.code == 0
+        out = capsys.readouterr().out
+        assert g.__version__ in out and g.__updated__ in out
+
+    def test_小文字のvはverbose(self):
+        assert g.parse_args(["a.csv", "-v"]).verbose
+
 
 # ============================================================
 # ワークフローの選択

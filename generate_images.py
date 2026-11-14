@@ -22,6 +22,11 @@ from urllib import error, parse, request
 from PIL import Image
 import websocket
 
+# === バージョン情報 ===
+# リリース時はここを更新する（pyproject.toml のバージョンもここから読み込む）
+__version__ = "0.1.0"
+__updated__ = "2026-11-14"      # 最終更新日
+
 # === 既定値 ===
 DEFAULT_SERVER = "localhost:8188"
 DEFAULT_OUTPUT_DIR = "output"     # 実行したフォルダ（カレントフォルダ）からの相対パス
@@ -752,6 +757,10 @@ def parse_args(argv=None):
                         help="画像を取得する出力ノードID（未指定時は保存画像をすべて取得）")
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="WebSocket メッセージなどの詳細ログを表示する")
+    # -v は --verbose で使用済みのため、バージョン表示は -V にする
+    parser.add_argument("-V", "--version", action="version",
+                        version=f"%(prog)s {__version__} (最終更新日: {__updated__})",
+                        help="バージョンと最終更新日を表示して終了する")
     args = parser.parse_args(argv)
     if args.timeout <= 0:
         parser.error("--timeout は1以上を指定してください")

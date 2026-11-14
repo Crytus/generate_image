@@ -4,7 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "generate-image"
-version = "0.1.0"
+# バージョンは generate_images.__version__ から読み込む
+dynamic = ["version"]
 description = "CSVに記述したシーン情報をもとに、ComfyUI の API で画像を一括生成するツール"
 readme = "readme.md"
 requires-python = ">=3.8"
@@ -23,6 +24,9 @@ generate_image = "generate_images:main"
 [tool.setuptools]
 # 単一モジュール構成（パッケージの自動検出は行わない）
 py-modules = ["generate_images"]
+
+[tool.setuptools.dynamic]
+version = {attr = "generate_images.__version__"}
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
