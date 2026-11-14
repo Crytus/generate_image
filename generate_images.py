@@ -37,8 +37,18 @@ REQUIRED_COLUMNS = ("scene_num", "scene_name", "seed", "file_name", "positive_pr
 PROMPT_KEYS = ("text", "value", "prompt")
 # シード値を持つ入力名
 SEED_KEYS = ("seed", "noise_seed")
-# positive 入力を持つサンプラーノード
+# シード値を持つサンプラーノード
 SAMPLER_CLASSES = ("KSampler", "KSamplerAdvanced", "SamplerCustom")
+# ポジティブプロンプトの探索起点となるノードと、その入力名
+# SamplerCustomAdvanced 構成ではガイダーノード（BasicGuider 等）がプロンプトを受け取る
+POSITIVE_INPUTS = {
+    "KSampler": "positive",
+    "KSamplerAdvanced": "positive",
+    "SamplerCustom": "positive",
+    "CFGGuider": "positive",
+    "BasicGuider": "conditioning",
+    "DualCFGGuider": "cond1",
+}
 
 # 拡張子と Pillow の保存形式の対応
 EXT_TO_FORMAT = {
@@ -468,8 +478,9 @@ def update_prompt_data(workflow, positive_text, new_seed, prompt_node=None):
                 if key in inputs and _set_seed(workflow, inputs, key, new_seed):
                     seed_count += 1
 
-        if prompt_node is None and class_type in SAMPLER_CLASSES and _is_link(inputs.get("positive")):
-            target = find_prompt_target(workflow, str(inputs["positive"][0]))
+        positive_key = POSITIVE_INPUTS.get(class_type)
+        if prompt_node is None and positive_key and _is_link(inputs.get(positive_key)):
+            target = find_prompt_target(workflow, str(inputs[positive_key][0]))
             if target:
                 prompt_targets.add(target)
 

@@ -211,10 +211,11 @@ python generate_images.py output\failed_scenes_20261009_210000.csv
 
 ### プロンプト
 
-- サンプラーの `positive` 入力から接続元をたどり、最初に見つかった文字列の `text` / `value` / `prompt` 入力を CSV の `positive_prompt` に置き換えます。
+- サンプラー（`KSampler` / `KSamplerAdvanced` / `SamplerCustom`）の `positive` 入力、またはガイダー（`CFGGuider` の `positive` / `BasicGuider` の `conditioning` / `DualCFGGuider` の `cond1`）から接続元をたどり、最初に見つかった文字列の `text` / `value` / `prompt` 入力を CSV の `positive_prompt` に置き換えます。
   - 例: `Qwen-Image-2512_*.json` では `CLIPTextEncode` の `text`
   - 例: `ernie_image_turbo.json` では、`CLIPTextEncode` の手前にある `PrimitiveStringMultiline` の `value`（プロンプト拡張の経路を保ったまま書き換えます）
   - 例: `qwen_image_2_1_t2i.json` では `TextEncodeQwenImage21` の `prompt`（`negative_prompt` は変更しません）
+  - 例: `SamplerCustomAdvanced` + `BasicGuider` 構成では、`BasicGuider` の手前にある `CLIPTextEncode` の `text`
 - 自動検出で意図しないノードが選ばれる場合は、`--prompt-node` でノードIDを指定してください。
 - 起動時に書き換え先のノードIDを表示します。書き換え先が見つからない場合は、生成を始める前にエラーで終了します。
 

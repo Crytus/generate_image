@@ -184,6 +184,34 @@ class TestUpdatePrompt:
         assert wf["459:458"]["inputs"]["seed"] == 7
         assert info["seed_count"] == 1
 
+    def test_BasicGuider構成はconditioningからたどる(self):
+        # SamplerCustomAdvanced + BasicGuider 構成（MiniMax 等）
+        wf = {
+            "1": {"class_type": "SamplerCustomAdvanced",
+                  "inputs": {"noise": ["2", 0], "guider": ["3", 0]}},
+            "2": {"class_type": "RandomNoise", "inputs": {"noise_seed": 0}},
+            "3": {"class_type": "BasicGuider",
+                  "inputs": {"model": ["5", 0], "conditioning": ["4", 0]}},
+            "4": {"class_type": "CLIPTextEncode", "inputs": {"text": "old", "clip": ["6", 0]}},
+            "5": {"class_type": "UNETLoader", "inputs": {"unet_name": "m.safetensors"}},
+            "6": {"class_type": "CLIPLoader", "inputs": {"clip_name": "c.safetensors"}},
+        }
+        info = g.update_prompt_data(wf, "NEW PROMPT", 11)
+        assert info["prompt_targets"] == [("4", "text")]
+        assert wf["4"]["inputs"]["text"] == "NEW PROMPT"
+        assert wf["2"]["inputs"]["noise_seed"] == 11
+        assert info["seed_count"] == 1
+
+    def test_CFGGuiderはpositiveのみ書き換える(self):
+        wf = {
+            "1": {"class_type": "CFGGuider", "inputs": {"positive": ["2", 0], "negative": ["3", 0]}},
+            "2": {"class_type": "CLIPTextEncode", "inputs": {"text": "pos"}},
+            "3": {"class_type": "CLIPTextEncode", "inputs": {"text": "neg"}},
+        }
+        info = g.update_prompt_data(wf, "new", 1)
+        assert info["prompt_targets"] == [("2", "text")]
+        assert wf["3"]["inputs"]["text"] == "neg"
+
     def test_全ワークフローで書き換え先が見つかる(self):
         for name in os.listdir(ROOT):
             if name.endswith(".json"):
