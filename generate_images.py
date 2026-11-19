@@ -11,6 +11,7 @@ import csv
 import io
 import json
 import os
+import random
 import sys
 import threading
 import time
@@ -36,6 +37,9 @@ WS_CONNECT_TIMEOUT = 10         # WebSocket接続のタイムアウト（秒）
 HTTP_TIMEOUT = 30               # HTTPリクエストのタイムアウト（秒）
 
 REQUIRED_COLUMNS = ("scene_num", "scene_name", "seed", "file_name", "positive_prompt")
+# --random-seed 指定時に生成するシード値の上限
+# JSON 経由でも精度が落ちない整数の範囲（2^53 - 1）に収める
+MAX_RANDOM_SEED = 2 ** 53 - 1
 
 # プロンプト文字列を書き換える対象の入力名（優先順）
 # "prompt" は TextEncodeQwenImage21（Qwen-Image 2.1）などで使われる
@@ -631,10 +635,12 @@ def _to_rgb(img):
 
 # === CSVからシーン情報を読み込み ===
 
-def load_scenes_from_csv(csv_path: str) -> list:
+def load_scenes_from_csv(csv_path: str, random_seed=False) -> list:
     """CSVからシーン情報をリストで読み込む。
     CSVフォーマット: scene_num,scene_name,seed,file_name,positive_prompt
     不正な行は警告を出して読み飛ばす。ファイル自体が読めない場合は空リストを返す。
+    random_seed が True の場合は seed を使わないため、seed カラムは省略可能で、
+    値が空・整数以外でもスキップしない（seed は None になる）。
     """
     scenes = []
     log(f"📂 CSVファイル読み込み中: {csv_path}")
@@ -644,7 +650,8 @@ def load_scenes_from_csv(csv_path: str) -> list:
             reader = csv.DictReader(f)
             fieldnames = [name.strip() for name in (reader.fieldnames or [])]
             reader.fieldnames = fieldnames
-            missing = [c for c in REQUIRED_COLUMNS if c not in fieldnames]
+            required = [c for c in REQUIRED_COLUMNS if not (random_seed and c == "seed")]
+            missing = [c for c in required if c not in fieldnames]
             if missing:
                 log(f"❌ CSVの必須カラムが不足しています: {', '.join(missing)}")
                 return []
@@ -654,10 +661,13 @@ def load_scenes_from_csv(csv_path: str) -> list:
                 if not any((v or "").strip() for v in row.values() if isinstance(v, str)):
                     continue  # 空行
                 try:
-                    seed = int((row["seed"] or "").strip())
+                    seed = int((row.get("seed") or "").strip())
                 except ValueError:
-                    log(f"⚠️ {line}行目: seed が整数ではないためスキップします ({row['seed']!r})")
-                    continue
+                    if random_seed:
+                        seed = None   # 実行時にランダムな値を割り当てる
+                    else:
+                        log(f"⚠️ {line}行目: seed が整数ではないためスキップします ({row['seed']!r})")
+                        continue
                 prompt = (row["positive_prompt"] or "").strip()
                 if not prompt:
                     log(f"⚠️ {line}行目: positive_prompt が空のためスキップします")
@@ -751,6 +761,8 @@ def parse_args(argv=None):
                         help=f"1シーンあたりのタイムアウト秒数 (既定: {DEFAULT_TIMEOUT})")
     parser.add_argument("--skip-existing", action="store_true",
                         help="出力ファイルが既に存在するシーンをスキップする")
+    parser.add_argument("-r", "--random-seed", action="store_true",
+                        help="CSVの seed を使わず、シーンごとに毎回ランダムなシード値で生成する")
     parser.add_argument("--prompt-node",
                         help="プロンプトを書き換えるノードID（自動検出がうまくいかない場合に指定）")
     parser.add_argument("--output-node",
@@ -796,8 +808,10 @@ def run(options, client_factory=ComfyUIClient):
     log(f"🛠️ プロンプト書き換え先: {targets} / シード書き換え箇所: {info['seed_count']}")
     if info["seed_count"] == 0:
         log("⚠️ シードの書き換え先が見つかりません。CSVの seed は反映されません")
+    if options.random_seed:
+        log("🎲 ランダムシードモード: CSVの seed は使わず、シーンごとにランダムな値を使用します")
 
-    scenes = load_scenes_from_csv(options.csv)
+    scenes = load_scenes_from_csv(options.csv, random_seed=options.random_seed)
     if not scenes:
         log("⚠️ シーン情報が空です。処理を終了します。")
         return EXIT_SETUP_ERROR
@@ -825,7 +839,10 @@ def run(options, client_factory=ComfyUIClient):
             log(f"\n{'=' * 60}")
             log(f"▶ Scene {scene['num']} ({index}/{total}) {scene['name']}")
             log(f"  Prompt: {scene['positive_prompt'][:60]}...")
-            log(f"  Seed: {scene['seed']}")
+            if options.random_seed:
+                # 実際に使ったシードを失敗リストCSVにも残せるよう、シーン情報を書き換える
+                scene["seed"] = random.randint(0, MAX_RANDOM_SEED)
+            log(f"  Seed: {scene['seed']}{' (ランダム)' if options.random_seed else ''}")
             log(f"  出力ファイル: {scene['file_name'] or '(未指定: prompt_id を使用)'}")
             log("=" * 60)
 

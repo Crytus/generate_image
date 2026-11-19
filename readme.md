@@ -136,6 +136,7 @@ python generate_images.py test_scenes.csv
 | `-s`, `--server` | ComfyUI のアドレス | `localhost:8188` |
 | `-t`, `--timeout` | 1シーンあたりのタイムアウト（秒） | `300` |
 | `--skip-existing` | 出力ファイルが既にあるシーンをスキップ | 無効（上書き） |
+| `-r`, `--random-seed` | CSV の `seed` を使わず、シーンごとに毎回ランダムなシード値で生成 | 無効（CSV の `seed` を使用） |
 | `--prompt-node` | プロンプトを書き換えるノードIDを指定 | 自動検出 |
 | `--output-node` | 画像を取得する出力ノードIDを指定 | 保存画像をすべて取得 |
 | `-v`, `--verbose` | WebSocket メッセージなどの詳細ログを表示 | 無効 |
@@ -160,7 +161,7 @@ python generate_images.py test_scenes.csv
 | --- | --- |
 | `scene_num` | シーン番号（ログ表示用） |
 | `scene_name` | シーン名（ログ表示用） |
-| `seed` | 生成に使用するシード値（整数） |
+| `seed` | 生成に使用するシード値（整数）。`--random-seed` 指定時は使用しないため、空欄やカラム自体の省略も可 |
 | `file_name` | 出力ファイル名（例: `scene_01_opener.jpg`） |
 | `positive_prompt` | ポジティブプロンプト |
 
@@ -171,7 +172,7 @@ scene_num,scene_name,seed,file_name,positive_prompt
 1,オープニング,1001999,scene_01_opener.jpg,"soft morning light filtering through cherry blossom branches, ..."
 ```
 
-- `seed` が整数でない行や `positive_prompt` が空の行は、警告を表示してスキップします。
+- `seed` が整数でない行や `positive_prompt` が空の行は、警告を表示してスキップします（`--random-seed` 指定時は `seed` はチェックしません）。
 - `file_name` が重複している場合は警告を表示します（後のシーンで上書きされます）。
 
 ## 出力ファイル名
@@ -208,6 +209,7 @@ python generate_images.py output\failed_scenes_20261009_210000.csv
 ### シード
 
 - `KSampler` / `KSamplerAdvanced` / `SamplerCustom` / `RandomNoise` ノードの `seed` / `noise_seed` を CSV の `seed` に置き換えます。
+- `--random-seed` を指定した場合は、シーンごとにランダムな値（0〜2^53-1）に置き換えます。使用したシードはログに表示され、失敗リストCSVにも記録されるため、同じ条件で再生成できます。
 - シードが他のノード（`PrimitiveInt` 等）から接続されている場合は、接続元の値を書き換えます。
 
 ### プロンプト

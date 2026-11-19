@@ -131,6 +131,21 @@ class TestLoadCsv:
         assert [s["num"] for s in scenes] == ["1", "4"]
         assert scenes[1]["seed"] == 40 and scenes[1]["file_name"] == "d.jpg"
 
+    def test_ランダムシード時はseedが空や不正でも読み込む(self, tmp_path):
+        path = write_csv(tmp_path / "s.csv", [
+            [1, "a", "", "a.jpg", "p"],
+            [2, "b", "abc", "b.jpg", "p"],
+            [3, "c", 5, "c.jpg", "p"],
+        ])
+        scenes = g.load_scenes_from_csv(path, random_seed=True)
+        assert [s["seed"] for s in scenes] == [None, None, 5]
+
+    def test_ランダムシード時はseedカラムを省略できる(self, tmp_path):
+        header = ["scene_num", "scene_name", "file_name", "positive_prompt"]
+        path = write_csv(tmp_path / "s.csv", [[1, "a", "a.jpg", "p"]], header=header)
+        assert len(g.load_scenes_from_csv(path, random_seed=True)) == 1
+        assert g.load_scenes_from_csv(path) == []
+
     def test_必須カラム不足(self, tmp_path):
         path = write_csv(tmp_path / "s.csv", [[1, "a", 1, "p"]],
                          header=["scene_num", "scene_name", "seed", "positive_prompt"])
@@ -322,6 +337,11 @@ class TestResponses:
         out = capsys.readouterr().out
         assert g.__version__ in out and g.__updated__ in out
 
+    def test_ランダムシードオプション(self):
+        assert not g.parse_args(["a.csv"]).random_seed
+        assert g.parse_args(["a.csv", "--random-seed"]).random_seed
+        assert g.parse_args(["a.csv", "-r"]).random_seed
+
     def test_小文字のvはverbose(self):
         assert g.parse_args(["a.csv", "-v"]).verbose
 
@@ -407,6 +427,33 @@ def make_options(server, csv_path, out_dir, *extra):
 
 
 class TestIntegration:
+    def test_ランダムシードはCSVのseedを使わず毎回異なる(self, server, tmp_path, monkeypatch):
+        # 乱数を固定値の列に差し替えて検証する
+        seeds = iter([101, 202, 303, 404])
+        monkeypatch.setattr(g.random, "randint", lambda a, b: next(seeds))
+        csv_path = write_csv(tmp_path / "s.csv", [
+            [1, "a", 11, "first.png", "prompt one"],
+            [2, "b", 11, "second.png", "prompt two"],
+        ])
+        assert g.run(make_options(server, csv_path, tmp_path, "--random-seed")) == g.EXIT_OK
+        assert [p["238:230"]["inputs"]["seed"] for p in server.prompts] == [101, 202]
+        # 2回目の実行でも別のシードになる
+        assert g.run(make_options(server, csv_path, tmp_path, "-r")) == g.EXIT_OK
+        assert [p["238:230"]["inputs"]["seed"] for p in server.prompts][2:] == [303, 404]
+
+    def test_ランダムシードの範囲(self, server, tmp_path):
+        csv_path = write_csv(tmp_path / "s.csv", [[1, "a", 11, "x.png", "p"]])
+        assert g.run(make_options(server, csv_path, tmp_path, "-r")) == g.EXIT_OK
+        assert 0 <= server.prompts[0]["238:230"]["inputs"]["seed"] <= g.MAX_RANDOM_SEED
+
+    def test_ランダムシード時は失敗リストに実際のシードを記録(self, server, tmp_path, monkeypatch):
+        monkeypatch.setattr(g.random, "randint", lambda a, b: 98765)
+        csv_path = write_csv(tmp_path / "s.csv", [[1, "a", "", "e.png", "ERROR"]])
+        assert g.run(make_options(server, csv_path, tmp_path, "-r", "-t", "30")) == g.EXIT_FAILED_SCENES
+        failed = [n for n in os.listdir(tmp_path) if n.startswith("failed_scenes_")]
+        rows = g.load_scenes_from_csv(str(tmp_path / failed[0]))
+        assert rows[0]["seed"] == 98765
+
     def test_Qwen2_1ワークフローで生成(self, server, tmp_path):
         csv_path = write_csv(tmp_path / "s.csv", [[1, "a", 11, "first.jpg", "prompt one"]])
         out = tmp_path / "out"
